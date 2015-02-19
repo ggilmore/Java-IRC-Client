@@ -1,5 +1,6 @@
 package ircClient;
 
 public enum OutputMessageType {
-    NICK, USER, JOIN
+    NICK, USER, JOIN, PONG
+    
 }

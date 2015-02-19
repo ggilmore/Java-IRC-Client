@@ -12,12 +12,18 @@ import java.util.Map;
 
 public class SandBox {
 
+    /**
+     * Junk working class that I just use to make sure that I understand the
+     * syntax of what is going on here.
+     */
+
     private final static String SERVER_STRING = "";
 
     public static void serve() {
         Socket socket;
         try {
-            socket = new Socket("irc.freenode.net", 6667);
+            socket = new Socket("irc.snoonet.org", 6667);
+            OutputStream outputStream = socket.getOutputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(
                     socket.getInputStream()));
             Map<String, String> arguments = new HashMap<String, String>();
@@ -25,50 +31,46 @@ public class SandBox {
             OutputMessage msg = new OutputMessage(OutputMessageType.NICK,
                     arguments);
             Map<String, String> arguments2 = new HashMap<String, String>();
-            arguments2.put("USER", "gmgilore");
+            arguments2.put("USER", "gmgilmore");
             arguments2.put("FULLNAME", "Geoffrey Gilmore");
             OutputMessage msg2 = new OutputMessage(OutputMessageType.USER,
                     arguments2);
 
             MessageQueue queue = new MessageQueue();
-            queue.addToOutputQueue(msg);
             queue.addToOutputQueue(msg2);
-            Thread thread = new Thread(new Runnable() {
+            queue.addToOutputQueue(msg);
+            Thread sendToServerThread = new Thread(new Runnable() {
 
                 @Override
                 public void run() {
+                    PrintWriter writer = new PrintWriter(
+                            new OutputStreamWriter(outputStream));
                     while (true) {
-                       
-                        OutputMessage msg = queue.popFromOutputQueue();
-                        try {
-                            OutputStream stream = socket.getOutputStream();
-                            PrintWriter writer = new PrintWriter(
-                                    new OutputStreamWriter(stream));
-                            writer.print(msg.getContents());
 
-                            writer.flush();
-                            System.out.println(msg.getContents());
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
+                        OutputMessage msg = queue.popFromOutputQueue();
+
+                        writer.println(msg.getContents());
+
+                        writer.flush();
+                        System.out.println(msg.getContents());
 
                     }
 
                 }
             });
 
-            thread.start();
+            sendToServerThread.start();
             String inputLine = reader.readLine();
-            int i = 0;
-            while (inputLine != null) {
-//                System.out.println(i);
-                i++;
-                if (i < 10) {
+
+            while (true) {
+                if (inputLine != null) {
                     System.out.println(inputLine);
+                    ServerHandler.parseServerResponse(inputLine, queue);
                 }
-                reader.readLine();
+                inputLine = reader.readLine();
+
             }
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -78,5 +80,6 @@ public class SandBox {
 
     public static void main(String[] args) {
         serve();
+
     }
 }
