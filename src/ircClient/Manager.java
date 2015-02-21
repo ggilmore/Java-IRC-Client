@@ -3,11 +3,16 @@ package ircClient;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import messageClasses.OutputMessage;
+import messageClasses.RawServerMessage;
+import static org.junit.Assert.*;
+
 /**
  *
  * This is the "master class" that coordinates communication between the
- * communicator, queue, and server handler. Any member of this class must use
- * this class' methods in order to communicate amongst themselves.
+ * communicator, queue, and server handler. Any member of this class should this
+ * class' methods in order to communicate amongst themselves (pass information
+ * around the program).
  * 
  * 
  * @author gmgilmore
@@ -18,7 +23,7 @@ public class Manager {
     /**
      * The communicator that talks directly with the server
      */
-    private final Communicator communicator;
+    private Communicator communicator;
 
     /**
      * Threadsafe queue that holds all the incoming and outgoing messages that
@@ -33,24 +38,59 @@ public class Manager {
     private final ServerHandler handler;
 
     /**
+     * The address of the server that we are going to connect to
+     */
+    private final String serverAddress;
+
+    /**
+     * The port that we are using to connect to the IRC server.
+     */
+    private final int portToConnectTo;
+
+    /**
+     * Creates a new manager instance.
      * 
      * @param serverAddress
+     *            The address of the server that we are going to connect to. Can
+     *            be a host name or an IP address.
      * @param portToConnectTo
-     * @throws UnknownHostException
-     * @throws IOException
+     *            The port that we are using to connect to the IRC server.
      */
     public Manager(String serverAddress, int portToConnectTo)
             throws UnknownHostException, IOException {
-        this.communicator = new Communicator(serverAddress, portToConnectTo,
-                this);
         this.queue = new MessageQueue();
         this.handler = new ServerHandler();
+        this.serverAddress = serverAddress;
+        this.portToConnectTo = portToConnectTo;
 
+        checkRep();
+
+    }
+
+    /**
+     * Starts the client-server communicator and queue processing. Call this
+     * before anything else.
+     * 
+     * @throws IOException
+     * @throws UnknownHostException
+     *             if the given host wasn't valid or we can't connect to it
+     */
+    public void start() throws UnknownHostException, IOException {
+
+        this.communicator = new Communicator(this.serverAddress,
+                this.portToConnectTo, this);
+
+        this.communicator.start();
+        // start processing the input queue
+        this.processServerInput(handler, this.queue, this);
         // start processing the output queue
         this.processOutputQueue(this.queue, this.communicator);
 
-        // start processing the input queue
-        this.processServerInput(handler, this);
+    }
+
+    private void checkRep() {
+        assertNotNull(this.queue);
+        assertNotNull(this.handler);
     }
 
     /**
@@ -64,18 +104,9 @@ public class Manager {
      */
     private void processOutputQueue(MessageQueue queue,
             Communicator communicator) {
-        Thread thread = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                while (true) {
-                    OutputMessage message = queue.popFromOutputQueue();
-                    communicator.sendToServer(message.getContents());
-                }
-
-            }
-        });
-        thread.start();
+        ContinuousQueueOutputProcessor processor = new ContinuousQueueOutputProcessor(
+                queue, communicator);
+        processor.processOutput();
     }
 
     /**
@@ -85,7 +116,9 @@ public class Manager {
      *            the message to be sent to the server
      */
     public void queueUpServerInput(RawServerMessage rawMessage) {
+        assert rawMessage != null;
         this.queue.addToInputQueue(rawMessage);
+        System.out.println("input message stored successfully");
     }
 
     /**
@@ -98,24 +131,15 @@ public class Manager {
      *            the manager that stores the inputQueue that you want to pull
      *            from
      */
-    private void processServerInput(ServerHandler handler, Manager manager) {
-        Thread thread = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                while (true) {
-                    RawServerMessage rawMessage = queue.popFromInputQueue();
-                    handler.parseServerResponse(rawMessage.getMessage(),
-                            manager);
-                }
-
-            }
-        });
-        thread.start();
+    private void processServerInput(ServerHandler handler, MessageQueue queue,
+            Manager manager) {
+        ContinuousQueueInputProcessor processor = new ContinuousQueueInputProcessor(
+                handler, queue, manager);
+        processor.processInput();
     }
 
     /**
-     * Prepares "messageToSend" so that it can be sent to the irc server
+     * Prepares "messageToSend" so that it can be sent to the IRC server
      * 
      * @param messageToSend
      *            the message to send

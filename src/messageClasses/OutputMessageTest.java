@@ -1,4 +1,4 @@
-package ircClient;
+package messageClasses;
 
 import static org.junit.Assert.*;
 

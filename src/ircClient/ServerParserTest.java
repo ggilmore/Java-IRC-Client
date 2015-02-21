@@ -1,6 +1,7 @@
 package ircClient;
 
 import static org.junit.Assert.*;
+import messageClasses.ServerResponse;
 
 import org.junit.Test;
 

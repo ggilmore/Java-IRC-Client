@@ -3,6 +3,14 @@ package ircClient;
 import java.util.Arrays;
 import java.util.List;
 
+import messageClasses.ServerResponse;
+
+/**
+ * This class parses the messages that we get back from the IRC server, and
+ * 
+ * @author gmgilmore
+ *
+ */
 public class ServerParser {
 
     /**
@@ -15,14 +23,15 @@ public class ServerParser {
      * 
      *            The prefix, params, and trailing sections are all optional,
      *            but the command is not.
-     *            
-     *            //TODO:expand this 
+     * 
+     *            //TODO:expand this
      * 
      * 
      * 
      * 
-     * @return A server response with all the prefix, command, arguments, and
-     *         trail information nicely parsed out of the serverInput string
+     * @return A ServerResponse instance with all the prefix, command,
+     *         arguments, and trail information nicely parsed out of the
+     *         serverInput string
      */
     public static ServerResponse parseServerResponse(String serverInput) {
 

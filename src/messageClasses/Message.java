@@ -1,4 +1,4 @@
-package ircClient;
+package messageClasses;
 
 public interface Message {
     

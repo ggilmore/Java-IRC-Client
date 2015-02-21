@@ -1,13 +1,20 @@
-package ircClient;
+package messageClasses;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class represents messages that are going to be sent from the client to
+ * the IRC server that the client is currently connected to.
+ * 
+ * This class is threadsafe because it is immutable. Its type field is final and
+ * store an OutputMessageType, which is immutable. Its contents field is final
+ * and stores a string, which is immutable.
+ * 
+ * @author gmgilmore
+ *
+ */
 public class OutputMessage {
-    /**
-     * this class represents messages that are going to be sent to the irc
-     * server that we are connected to
-     */
 
     private final OutputMessageType type;
 
@@ -28,12 +35,16 @@ public class OutputMessage {
     private final static String COLON = ":";
 
     private final static String FULLNAME = "FULLNAME";
-    
+
     private final static String RESPONSE_ID = "RESPONSEID";
-    
+
     private final static String PONG = "PONG";
 
     private final String contents;
+
+    // TODO: think about whether or not the "arguments" that I pass into the
+    // constructor is the best way implement this. Is it worth writing another
+    // Enum or class for this information?
 
     /**
      * Creates a new outputmessage instances with type "type" and arguments
@@ -65,7 +76,8 @@ public class OutputMessage {
             String fullName = arguments.get(FULLNAME);
             this.contents = USER + " " + username + " " + USER_MODE_DEFAULT
                     + " " + ASTERISK + " " + COLON + fullName;
-//            this.contents = USER + " " + username + " " + "irc.snoonet.org" + " irc.snoonet.org" + " :Geoffrey Gilmore";
+            // this.contents = USER + " " + username + " " + "irc.snoonet.org" +
+            // " irc.snoonet.org" + " :Geoffrey Gilmore";
         }
             break;
 
@@ -81,12 +93,16 @@ public class OutputMessage {
             this.contents = JOIN + " " + POUND_SYMBOL + " " + channel;
         }
             break;
-            
+
         case PONG: {
             assert arguments.size() == 1;
             String responseID = arguments.get(RESPONSE_ID);
             this.contents = PONG + " " + COLON + responseID;
             break;
+        }
+        
+        case PRIVMSG: {
+            assert arguments.size() == 1;
         }
 
         default:

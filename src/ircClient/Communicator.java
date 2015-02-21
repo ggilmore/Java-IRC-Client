@@ -9,21 +9,39 @@ import java.io.Writer;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class Communicator {
+import messageClasses.RawServerMessage;
+
+class Communicator {
     /**
      * This class is responsible for interacting directly with the IRC server.
      * It continually reads input from the IRC server and forwards that
      * information to the Manager. The Manager continually sends the
      * communicator OutputMessages that the communicator directly sends to the
      * IRC server.
+     * 
+     * This class is not threadsafe.
+     * 
+     * This class is not meant to be used by any class other than the Manager.
      */
 
-    private final Socket socket; 
+    /**
+     * The socket used to communicate with the server.
+     */
+    private final Socket socket;
 
+    /**
+     * The manager that is controlling this communicator.
+     */
     private final Manager manager;
 
+    /**
+     * The reader for the socket's input stream.
+     */
     private final BufferedReader reader;
 
+    /**
+     * The writer for the socket's output stream.
+     */
     private final PrintWriter writer;
 
     /**
@@ -40,8 +58,8 @@ public class Communicator {
      *             if
      * @throws UnknownHostException
      */
-    public Communicator(String serverAddress, int portToConnectTo,
-            Manager manager) throws UnknownHostException, IOException {
+    Communicator(String serverAddress, int portToConnectTo, Manager manager)
+            throws UnknownHostException, IOException {
 
         // I gave the constructor the ability throw an exception that must be
         // handled because not being able to connect to the specified server is
@@ -54,10 +72,11 @@ public class Communicator {
             BufferedReader reader = new BufferedReader(new InputStreamReader(
                     this.socket.getInputStream()));
             this.reader = reader;
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            throw new RuntimeException("unable to create input reader");
+            throw new RuntimeException("unable to create socket input reader");
         }
 
         try {
@@ -69,7 +88,15 @@ public class Communicator {
             throw new RuntimeException("unable to create socket writer");
         }
 
+    }
+
+    /**
+     * Starts the communication between the server and this communicator
+     * instance. Call this before anything else.
+     */
+    void start() {
         this.readServerInput(this.reader, this.manager);
+        System.out.println("still not working");
     }
 
     /**
@@ -79,7 +106,8 @@ public class Communicator {
      * @param stringToSend
      *            the message that we want to send
      */
-    public void sendToServer(String stringToSend) {
+    void sendToServer(String stringToSend) {
+        System.out.println("sent: " + stringToSend);
         this.writer.println(stringToSend);
         this.writer.flush();
     }
@@ -95,28 +123,9 @@ public class Communicator {
      *            the manager instance that we are going to hand this input off
      *            to
      */
-    private void readServerInput(BufferedReader reader, Manager manager) {
-        Thread thread = new Thread() {
-            public void run() {
-                String inputLine;
-                try {
-                    inputLine = reader.readLine();
-                    while (true) {
-                        if (inputLine != null) {
-                            RawServerMessage message = new RawServerMessage(
-                                    inputLine.trim());
-                            manager.queueUpServerInput(message);
-                        }
-                        inputLine = reader.readLine();
-                    }
-
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-            }
-        };
-        thread.run();
+    void readServerInput(BufferedReader reader, Manager manager) {
+        ContinuousServerReader serverReader = new ContinuousServerReader(
+                reader, manager);
+        serverReader.startReading();
     }
 }

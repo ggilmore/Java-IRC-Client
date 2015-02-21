@@ -2,7 +2,9 @@ package ircClient;
 
 import java.util.Queue;
 
-public interface ServerHandlerHelper {
+import messageClasses.ServerResponse;
+
+interface ServerHandlerHelper {
 
     /**
      * This is just a runnable interface so that we can write ServerHandler's
@@ -15,8 +17,8 @@ public interface ServerHandlerHelper {
      * @param response
      *            is the ServerResposne that we are going to feed to the
      *            function stored inside of run
-     * @param m
+     * @param manager
      *            the manager that is controlling this server handler
      */
-    public void run(ServerResponse response, Manager m);
+    public void run(ServerResponse response, Manager manager);
 }

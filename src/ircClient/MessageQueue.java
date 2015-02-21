@@ -3,14 +3,26 @@ package ircClient;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import messageClasses.OutputMessage;
+import messageClasses.RawServerMessage;
+
 public class MessageQueue {
     /**
      * This class is a container that contains the queues for the messages going
      * out to be sent to the server ("out" queue) as well as the queue for
      * messages coming to the client ("in" queue, to be implemented)
      * 
-     * This class is threadsafe. 
+     * This class is threadsafe. It contains two blocking queues, "out" and
+     * "in", both of which are threadsafe. Also, the only public methods
+     * available are addTo(Input/Output)Queue, and popFrom(Input/Output)Queue.
+     * addTo(Input/Output)Queue uses the "put" function of the BlockingQueue,
+     * which is threadsafe, and popFrom(Input/Output)Queue uses the "take"
+     * function of the blocking queue, which is also threadsafe.
      * 
+     * TODO: talk about the threads created by the manager, and how only one
+     * thread ever touches each method.
+     * 
+     * Thus, this class is threadsafe.
      */
 
     private final BlockingQueue<OutputMessage> out;
@@ -33,10 +45,13 @@ public class MessageQueue {
      */
     public void addToOutputQueue(OutputMessage messageToAdd) {
         try {
+            System.out.println("addingToOutputQueue");
             out.put(messageToAdd);
+            System.out.println("succesfullly added");
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            
         }
     }
 
@@ -68,7 +83,13 @@ public class MessageQueue {
      * 
      */
     public void addToInputQueue(RawServerMessage messageToAdd) {
-
+        try {
+            this.in.put(messageToAdd);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new RuntimeException("Interrruped while trying to add to inputQueue");
+        }
     }
 
     /**
@@ -82,15 +103,14 @@ public class MessageQueue {
         try {
             message = in.take();
             return message;
-            
+
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             throw new RuntimeException(
                     "Interrupted while trying to take from InputQueue");
         }
-               
-        
+
     }
 
 }

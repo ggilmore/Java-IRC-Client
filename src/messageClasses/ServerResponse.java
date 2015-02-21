@@ -1,4 +1,4 @@
-package ircClient;
+package messageClasses;
 
 import java.util.ArrayList;
 import java.util.Collections;
