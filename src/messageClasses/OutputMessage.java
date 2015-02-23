@@ -1,5 +1,6 @@
 package messageClasses;
 
+import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,12 @@ public class OutputMessage {
     private final static String RESPONSE_ID = "RESPONSEID";
 
     private final static String PONG = "PONG";
+    
+    private final static String TARGET = "TARGET";
+    
+    private final static String PRIVATE_MESSAGE = "PRIVMSG";
+    
+    private final static String CONTENTS = "CONTENTS";
 
     private final String contents;
 
@@ -102,7 +109,17 @@ public class OutputMessage {
         }
         
         case PRIVMSG: {
+            assert arguments.size() == 2;
+            String msgTarget = arguments.get(TARGET);           
+            String messageContents = arguments.get(CONTENTS);
+            this.contents = PRIVATE_MESSAGE + " " + msgTarget  + " " + messageContents;
+            break;
+        }
+        
+        case RAW:{
             assert arguments.size() == 1;
+            this.contents = arguments.get(CONTENTS);
+            break;
         }
 
         default:
@@ -121,7 +138,7 @@ public class OutputMessage {
     }
 
     /**
-     * a helpful string representation of this instance, usefull for debugging
+     * a helpful string representation of this instance, useful for debugging
      */
     @Override
     public String toString() {

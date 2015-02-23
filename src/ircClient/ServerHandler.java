@@ -1,7 +1,12 @@
 package ircClient;
 
 import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +90,7 @@ public class ServerHandler {
         if (commandMapping.containsKey(response.getCommand())) {
             commandMapping.get(response.getCommand()).run(response, manager);
         }
+        System.out.println(responseToParse);
 
     }
 
@@ -117,6 +123,42 @@ public class ServerHandler {
         OutputMessage msg2 = new OutputMessage(OutputMessageType.JOIN,
                 arguments2);
         manager.sendToOutputQueue(msg2);
+    }
+
+    private static void displayToUser(String stringToDisplay) {
+        System.out.println(stringToDisplay);
+
+    }
+
+    public static void main(String[] args) {
+        try {
+            Manager manager = new Manager("irc.snoonet.org", 6667);
+            manager.start();
+            Map<String, String> arguments = new HashMap<String, String>();
+            arguments.put("NICK", "cbk486");
+            OutputMessage msg = new OutputMessage(OutputMessageType.NICK,
+                    arguments);
+            Map<String, String> arguments2 = new HashMap<String, String>();
+            arguments2.put("USER", "gmgilmore");
+            arguments2.put("FULLNAME", "Geoffrey Gilmore");
+            OutputMessage msg2 = new OutputMessage(OutputMessageType.USER,
+                    arguments2);
+            manager.sendToOutputQueue(msg2);
+            manager.sendToOutputQueue(msg);
+            ServerSocket socket = new ServerSocket(65535);
+
+            Socket userSocket = socket.accept();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    userSocket.getInputStream()));
+
+            for (String line = reader.readLine(); line != null; line = reader
+                    .readLine()) {
+                manager.sendToOutputQueue(UserParser.parseUserInput(line));
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }
